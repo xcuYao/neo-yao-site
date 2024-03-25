@@ -1,5 +1,5 @@
 ---
-title: git命令备忘.md
+title: git命令备忘
 date: 2024-03-22 15:38:47
 tags:
 ---
