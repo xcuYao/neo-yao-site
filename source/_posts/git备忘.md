@@ -51,6 +51,11 @@ $ git chery-pick A~..B
 ```
 git checkout <旧分支名>         # 切换到需要重命名的分支
 git branch -m <新分支名>        # 重命名本地分支
-git push origin :<旧分支名>      # 删除远程旧分支
-git push origin <新分支名>       # 推送新分支到远程
+git push --delete origin :<旧分支名>      # 删除远程旧分支
+git push <新分支名>       # 推送新分支到远程
+```
+
+// 修剪分支
+```
+git remote prune origin --dry-run 
 ```
