@@ -1,5 +1,5 @@
 ---
-title: git命令备忘
+title: git备忘
 date: 2024-03-22 15:38:47
 tags:
 ---
@@ -45,4 +45,12 @@ $ git rebase -i HEAD~3
 $ git chery-pick <HashA> <HashB>
 // 如果要包含A
 $ git chery-pick A~..B
+```
+
+// 分支重命名
+```
+git checkout <旧分支名>         # 切换到需要重命名的分支
+git branch -m <新分支名>        # 重命名本地分支
+git push origin :<旧分支名>      # 删除远程旧分支
+git push origin <新分支名>       # 推送新分支到远程
 ```
