@@ -47,19 +47,14 @@ $ git chery-pick <HashA> <HashB>
 $ git chery-pick A~..B
 
 // 分支重命名
-```
 git checkout <旧分支名>         # 切换到需要重命名的分支
 git branch -m <新分支名>        # 重命名本地分支
-git push --delete origin :<旧分支名>      # 删除远程旧分支
+git push --delete origin <旧分支名>      # 删除远程旧分支
 git branch --unset-upstream      # 解除之前建立的分支关系
 git push --set-upstream origin <新分支名> # 推送到远端并建立关系
 git push -u origin <新分支名> # 推送到远端并建立关系
-```
 
 // 修剪分支
-```
 git remote prune origin --dry-run 
-```
-
 ```
 
