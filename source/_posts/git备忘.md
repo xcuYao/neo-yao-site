@@ -18,8 +18,16 @@ $ git config --local -e
     co = checkout
     br = branch
     ci = commit
+    #
     st = status
+    # log带彩色
     lg = "log --graph --pretty=format:' %C(auto)%h %d%s %Cblue%an %Cgreen%ar'"
+    # 删除最近一个提交，保留文件修改
+    undo = reset --soft HEAD^
+    # 删除最近一个提交，不保留文件
+    cancel = reset --hard HEAD^
+    # 提交完了，发现还需要一点小修改，不想新建一个提交
+    onemore = commit -a --amend --no-edit
 [push]
     default = simple
 [pull]
