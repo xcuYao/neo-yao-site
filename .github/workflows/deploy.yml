@@ -1,0 +1,109 @@
+# Build the Hexo site and rsync public/ to the Tencent Cloud nginx docroot.
+# HTTPS and the nginx server block stay on the server; this workflow only
+# replaces static files under /var/www/blog/.
+#
+# Required repository secrets:
+#   SSH_PRIVATE_KEY  Unencrypted OpenSSH private key (ed25519 recommended)
+#   SSH_HOST         124.222.200.82 or neoyao.site
+#   SSH_USER         SSH user that can write /var/www/blog
+# Optional repository secrets:
+#   SSH_PORT         defaults to 22
+#   SSH_KNOWN_HOSTS  output of `ssh-keyscan`; when unset, accept-new is used
+#
+# Remote path is fixed: /var/www/blog/
+# Both rsync paths use a trailing slash so public/* lands in /var/www/blog/,
+# not in /var/www/blog/public/. --delete removes stale pages.
+# See DEPLOY.md.
+
+name: Deploy site
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-neoyao-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and rsync
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node 20 is the LTS line Hexo 6.3 and the vendored Stellar theme document.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate static files
+        run: npm run build
+
+      - name: Rsync public/ to /var/www/blog/
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SSH_PRIVATE_KEY}" ] || [ -z "${SSH_HOST}" ] || [ -z "${SSH_USER}" ]; then
+            echo "Missing required secrets: SSH_PRIVATE_KEY, SSH_HOST, and SSH_USER." >&2
+            echo "Add them in the repository settings. See DEPLOY.md." >&2
+            exit 1
+          fi
+
+          if ! [[ "${SSH_HOST}" =~ ^[A-Za-z0-9._:-]+$ ]]; then
+            echo "SSH_HOST contains unexpected characters." >&2
+            exit 1
+          fi
+          if ! [[ "${SSH_USER}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "SSH_USER contains unexpected characters." >&2
+            exit 1
+          fi
+
+          PORT="${SSH_PORT:-22}"
+          if ! [[ "${PORT}" =~ ^[0-9]+$ ]]; then
+            echo "SSH_PORT must be a number." >&2
+            exit 1
+          fi
+
+          umask 077
+          mkdir -p "${HOME}/.ssh"
+          printf '%s\n' "${SSH_PRIVATE_KEY}" | tr -d '\r' > "${HOME}/.ssh/deploy_key"
+          chmod 600 "${HOME}/.ssh/deploy_key"
+          if ! ssh-keygen -y -f "${HOME}/.ssh/deploy_key" >/dev/null; then
+            echo "SSH_PRIVATE_KEY is not a usable unencrypted OpenSSH private key." >&2
+            exit 1
+          fi
+
+          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "${SSH_KNOWN_HOSTS}" | tr -d '\r' > "${HOME}/.ssh/known_hosts"
+            host_key_check="yes"
+          else
+            echo "SSH_KNOWN_HOSTS is unset; using StrictHostKeyChecking=accept-new."
+            : > "${HOME}/.ssh/known_hosts"
+            host_key_check="accept-new"
+          fi
+          chmod 644 "${HOME}/.ssh/known_hosts"
+
+          # Trailing slashes: copy the contents of public/ into /var/www/blog/.
+          rsync -az --delete --no-owner --no-group --chmod=D755,F644 \
+            -e "ssh -i ${HOME}/.ssh/deploy_key -p ${PORT} -o IdentitiesOnly=yes -o StrictHostKeyChecking=${host_key_check} -o UserKnownHostsFile=${HOME}/.ssh/known_hosts" \
+            public/ \
+            "${SSH_USER}@${SSH_HOST}:/var/www/blog/"
