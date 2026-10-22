@@ -285,6 +285,10 @@ footer:
   content: | # 支持 Markdown 格式
     本站由 [{author.name}](/) 使用 [{theme.name} {theme.version}]({theme.tree}) 主题创建。
     本博客所有文章除特别声明外，均采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可协议，转载请注明出处。
+  # ICP 备案号。页脚居中展示，链接至工信部。文本须与备案号完全一致。
+  beian:
+    text: 豫ICP备2026002130号
+    url: https://beian.miit.gov.cn
   # 主题用户越多，开发者维护和更新的积极性就越高，如果您喜欢本主题，请在适当的位置显示主题信息和仓库链接以表支持。
 
 

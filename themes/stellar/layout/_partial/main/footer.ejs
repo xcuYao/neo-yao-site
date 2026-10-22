@@ -28,6 +28,10 @@ function layoutDiv() {
   if (content) {
     el += markdown(content)
   }
+  const beian = theme.footer.beian
+  if (beian && beian.text && beian.url) {
+    el += '<p class="beian"><a href="' + beian.url + '" target="_blank" rel="noopener noreferrer">' + beian.text + '</a></p>'
+  }
   el += '</div></footer>'
   return el
 }
